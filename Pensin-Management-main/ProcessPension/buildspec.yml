@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+   install:
+      runtime-versions:
+         docker: 18
+   pre_build:
+      commands:
+      - echo "Entered the pre-build phase"
+      - $(aws ecr get-login  --no-include-email --region $AWS_REGION)
+   build:
+      commands:
+      - echo "Entered build phase"
+      - cd ProcessPension
+      - mvn install -Dmaven.test.skip=true
+      - echo " building docker image"
+      - docker build -t service/processpension .
+      - docker tag service/processpension 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-processpension-docker:processpension
+   post_build:
+      commands:
+      - echo "Entered the post-build phase"
+      - docker push 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-processpension-docker:processpension
+      - printf '[{"name":"processpension-container","imageUri":"%s"}]' 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-processpension-docker:processpension>taskdefinition.json
+artifacts:
+   files:
+   - ProcessPension/taskdefinition.json

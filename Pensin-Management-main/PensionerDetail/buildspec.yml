@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+   install:
+      runtime-versions:
+         docker: 18
+   pre_build:
+      commands:
+      - echo "Entered the pre-build phase"
+      - $(aws ecr get-login  --no-include-email --region $AWS_REGION)
+   build:
+      commands:
+      - echo "Entered build phase"
+      - cd PensionerDetail
+      - mvn install -Dmaven.test.skip=true
+      - echo " building docker image"
+      - docker build -t service/pensionerdetail .
+      - docker tag service/pensionerdetail 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensionerdetail-docker:pensionerdetail
+   post_build:
+      commands:
+      - echo "Entered the post-build phase"
+      - docker push 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensionerdetail-docker:pensionerdetail
+      - printf '[{"name":"pensionerdetail-container","imageUri":"%s"}]' 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensionerdetail-docker:pensionerdetail>taskdefinition.json
+artifacts:
+   files:
+   - PensionerDetail/taskdefinition.json
