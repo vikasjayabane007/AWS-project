@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+   install:
+      runtime-versions:
+         docker: 18
+   pre_build:
+      commands:
+      - echo "Entered the pre-build phase"
+      - $(aws ecr get-login  --no-include-email --region $AWS_REGION)
+   build:
+      commands:
+      - echo "Entered build phase"
+      - cd pensiondisbursement
+      - mvn install -Dmaven.test.skip=true
+      - echo " building docker image"
+      - docker build -t service/pensiondisburse .
+      - docker tag service/pensiondisburse 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensiondisbursement-docker:pensiondisburse
+   post_build:
+      commands:
+      - echo "Entered the post-build phase"
+      - docker push 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensiondisbursement-docker:pensiondisburse
+      - printf '[{"name":"pensiondisburse-container","imageUri":"%s"}]' 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-pensiondisbursement-docker:pensiondisburse>taskdefinition.json
+artifacts:
+   files:
+   - pensiondisbursement/taskdefinition.json

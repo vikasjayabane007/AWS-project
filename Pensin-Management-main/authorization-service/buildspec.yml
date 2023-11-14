@@ -1,0 +1,25 @@
+version: 0.2
+phases:
+   install:
+      runtime-versions:
+         docker: 18
+   pre_build:
+      commands:
+      - echo "Entered the pre-build phase"
+      - $(aws ecr get-login  --no-include-email --region $AWS_REGION)
+   build:
+      commands:
+      - echo "Entered build phase"
+      - cd authorization-service
+      - mvn install -Dmaven.test.skip=true
+      - echo " building docker image"
+      - docker build -t service/authapp .
+      - docker tag service/authapp 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-auth-docker:authapp
+   post_build:
+      commands:
+      - echo "Entered the post-build phase"
+      - docker push 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-auth-docker:authapp
+      - printf '[{"name":"authapp-container","imageUri":"%s"}]' 408832051344.dkr.ecr.ap-south-1.amazonaws.com/pod-15-auth-docker:authapp>taskdefinition.json
+artifacts:
+   files:
+   - authorization-service/taskdefinition.json
